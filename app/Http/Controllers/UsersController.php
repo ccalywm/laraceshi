@@ -8,6 +8,30 @@ use Auth;
 
 class UsersController extends Controller
 {
+    /**
+     * UsersController constructor.
+     * 中间件过滤未登录用户访问
+     * except方法中的是控制器方法是允许未登录用户访问的
+     */
+    public function __construct()
+    {
+        $this->middleware('auth',[
+            'except' => ['show','create','store','index']
+        ]);
+
+        $this->middleware('guest',[
+           'only' => ['create']
+        ]);
+    }
+
+    //返回所有用户
+    public function index()
+    {
+        $users = User::paginate(10);
+        return view('users.index',compact('users'));
+    }
+
+    //返回用户注册页面
     public function create()
     {
         return view('users.create');
@@ -43,12 +67,14 @@ class UsersController extends Controller
     //返回编辑用户资料页面
     public function edit(User $user)
     {
+        $this->authorize('update',$user);
         return view('users.edit',compact('user'));
     }
 
     //更新用户资料
     public function update(User $user,Request $request)
     {
+        $this->authorize('update',$user);
         //验证输入
         $this->validate($request,[
             'name' => 'required|max:50',
@@ -69,5 +95,12 @@ class UsersController extends Controller
 
         return redirect()->route('users.show',$user);
 
+    }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+        session()->flash('success','成功删除用户！');
+        return back();
     }
 }

@@ -7,6 +7,14 @@ use Auth;
 
 class SessionsController extends Controller
 {
+    //中间件过滤 过滤已登录用户访问登录页面
+    public function __construct()
+    {
+        $this->middleware('guest',[
+            'only' => ['create']
+        ]);
+    }
+
     //返回登录视图
     public function create()
     {
@@ -24,7 +32,8 @@ class SessionsController extends Controller
         //验证用户是否存在，密码是否正确
         if (Auth::attempt($creadentials,$request->has('remember'))){
             session()->flash('success','登录成功');
-            return redirect()->route('users.show',[Auth::user()]);
+            $fallback = route('users.show',Auth::user());
+            return redirect()->intended($fallback);
         }else{
             session()->flash('success','登录失败');
             return redirect()->back()->withInput();
